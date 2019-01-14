@@ -1,1 +1,17 @@
-See the doc directory
+The original README is in the doc/ directory.
+I made some small changes to the Makefile so that this will compile under Ubuntu.
+There will be LOTS of warnings because the original authors turned on all warnings, but it does compile just fine. At some point I may work through and try to eliminate some of these warnings, but at a glance it seems many of them are intentional behaviour.
+I made this repo after noticing that the code was released under GPLv2 (hurray!). This makes it much easier to download and build on a modern Linux system.
+All credit goes to the original authors:
+
+Versions <= 1.0 were written by Brainsoft.
+(c) 1999-2000 Brainsoft
+e-mail: brain@artax.karlin.mff.cuni.cz
+URL: http://artax.karlin.mff.cuni.cz/~brain/
+
+1.0 < versions <= 2.3 were written by Achim Flammenkamp
+(GPL) 2000-2005
+e-mail: achim@mathematik.uni-bielefeld.de
+
+My new changes are released under GPLv2 as well. (c) Frozen Electronics 2018
+
