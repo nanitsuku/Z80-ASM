@@ -8,7 +8,7 @@ All you need is not love but following:
   * GNU make
   
 This program wasn't tested on other platforms/compilers. But it's possible it
-would work.
+will work.
 
 
 Installation:
@@ -16,8 +16,8 @@ Installation:
 Installation is very simple:
 
   * edit Makefile and set your operating system
-  * type make
-  * copy z80-asm, z80-mon, z80-asm.1, z80-asm.5, z80-mon.1 wherever you want
+  * type 'make'
+  * if you want to install the binaries and manuals next, type 'make install'
   * read the doc directory
   * enjoy the z80-asm or z80-mon program
   * if you need examples of assembler source, see the programs directory

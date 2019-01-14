@@ -8,7 +8,7 @@
 
 static FILE *input;
 
-static unsigned char memory[65536];
+static unsigned char memory[MAX_MEM];
 static unsigned short start,length;
 
 
@@ -44,8 +44,8 @@ static void
 usage(char *myname)
 {
 printf(
-"Z80 assembler.  "
-"(c)1999-2004 Brainsoft  (Copyleft) 1999-2005\n"
+"Z80 assembler V 2.4.1 "
+"(c)1999-2004 Brainsoft  (Copyleft) 1999-2018\n"
 "Usage: %s [-w] [-h] [-l] [-f xx] [-c] <input file .asm> [<start address>[[:<length>]:<output file>]]\n"
 "Usage: %s [-w] [-h] [-l] [-f xx] [-c] <input file> [<start address>[:<length>]:<output file>] ...\n"
 ,myname,myname);
@@ -139,7 +139,7 @@ int s,a=0,b,cross=0;
 for (b=s=1;s<argc&&*argv[s]=='-';b++)
 {
    if (!*(argv[s]+b))
-      b=1, s++;
+      b=0, s++;
    else if (*(argv[s]+b)=='w')
    {  printf("Warnings switched on.\n");WARNINGS=1;
    }
@@ -159,7 +159,8 @@ for (b=s=1;s<argc&&*argv[s]=='-';b++)
 
 if (s == argc) return 0;
 input=fopen(argv[s],"r");
-if (!input){fprintf(stderr,"Error: can't open input file \"%s\".\n",argv[s]);return 1;}
+if (!input)
+{fprintf(stderr,"Error: can't open input file \"%s\".\n",argv[s]);return 1;}
 
 disable_pseudo=0;
 memset(memory,a,1<<16);
@@ -175,7 +176,8 @@ if (!a)
   a=check_cond_nesting();
 if (!a)
  {
- fseek(input,0,SEEK_SET);
+ if (fseek(input,0,SEEK_SET))
+ {asm_close();fprintf(stderr,"can't rewind input file \"%s\".\n",argv[s]);return 2;}
  set_compile_pass(2);
  set_start_address(0);
  while (!a && !take_line(line,511))

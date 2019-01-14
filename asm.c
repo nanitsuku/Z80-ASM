@@ -171,12 +171,19 @@ if (txt[0]=='(' && txt[l-1]==')' && is_indirect(txt))
 
    /* (check for register) */
    arg->value=convert(reg,N_REGISTERS,txt);
-   if (arg->value!=-1){arg->type=A_PODLE_REG;return NIL;}
-
+   if (arg->value!=-1)
+   {  if (arg->value == R_IX)
+         arg->type=A_PODLE_IX_PLUS, arg->value=0;
+      else if (arg->value == R_IY)
+         arg->type=A_PODLE_IY_PLUS, arg->value=0;
+      else
+         arg->type=A_PODLE_REG;
+      return NIL;
+   }
    if (txt[0]=='I' && (txt[1]=='Y'||txt[1]=='X') && (txt[2]=='+'||txt[2]=='-'))
    {  /* (IX+num) or (IY+num) or (IX-num) or (IY-num) */
       arg->type= (txt[1]=='Y' ? A_PODLE_IY_PLUS : A_PODLE_IX_PLUS);
-      if (test_number(txt+2,&a))
+      if (!txt[test_number(txt+2,&a)])
          arg->value=a;
       else
       {  a=parse_expr(txt+2,&arg->value,lineno);
@@ -1097,8 +1104,8 @@ if (!ret)
       if (!lex.arg){error(lineno,txt,msg[MIS1]);ret=1;break;}
       t=lex.arg;
       if (t->type!=A_NUM){error(lineno,txt,msg[IAN]);ret=1;break;}
-      if (t->value>65535||t->value<0){error(lineno,txt,msg[VOR]);ret=1;break;}
-      if (address+t->value>=65536)  address=0; else address += t->value;
+      if (t->value>MAX_ADDR||t->value<0){error(lineno,txt,msg[VOR]);ret=1;break;}
+      if (address+t->value>MAX_ADDR)  address=0; else address += t->value;
       last=address; /* we write no fill bytes into listing */
       break;
 
@@ -1143,7 +1150,7 @@ if (!ret)
       do
       {
       if (t->type!=A_NUM){error(lineno,txt,msg[IAN]);ret=1;break;}
-      if (t->value>65535||t->value<-32768){error(lineno,txt,msg[VOR]);ret=1;break;}
+      if (t->value>MAX_ADDR||t->value<-MAX_MEM/2){error(lineno,txt,msg[VOR]);ret=1;break;}
       out(t->value&255);out((t->value>>8)&255);
       t=t->next;
       }

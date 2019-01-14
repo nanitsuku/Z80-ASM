@@ -10,7 +10,7 @@
 int  display_size=0, display_xpos, display_ypos;
 
 static int  col_pos=0;
-static unsigned char  display[256+1];
+static char  display[256+1];
 
 void define_scroll_line(unsigned x, unsigned y, unsigned len)
 {

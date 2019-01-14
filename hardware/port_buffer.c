@@ -16,7 +16,8 @@ init_port_buffer(void)
    ports= fopen(Z80_PORTS,"r+b");   /* read_writable_binary file */
    if (ports)
       if (256 != fread(buffer,1,256,ports))
-      {  fclose(ports), ports= (FILE*)0;  }
+      {  error(0,"hardware malfunction","port read:");
+         fclose(ports), ports= (FILE*)0;  }
    return !ports;
 #else
    return 0;

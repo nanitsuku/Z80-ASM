@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include "../z80-global"
 #include "../console.h"
 #include "../console_token"
 
@@ -8,15 +8,16 @@ int main(void)
 {
 unsigned char  buffer[32];
 unsigned a;
-FILE  *fp = fopen(".CPU","r");
-if (!fp)  exit(1);
+FILE  *fp = fopen(_CPU,"r");
+if (!fp)  return 1;
 
 c_init(BLACK);
 c_cursor(C_HIDE);
 do
 {  
    rewind(fp);
-   fread(buffer,1,32,fp);
+   if (32 != fread(buffer,1,32,fp))
+      return 2;
    fflush(fp);
    c_setcolor(WHITE);
    c_goto(0,0);

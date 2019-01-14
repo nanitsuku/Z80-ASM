@@ -16,10 +16,10 @@ void write_header(FILE *stream,unsigned short address)
 
 
 /* reads header of a file and tests if it's Z80 ASM file, reads address */
-/* return value: 0=OK, 1=this is not a z80 asm file */
-int read_header(FILE *stream,unsigned short *address, int *len)
+/* return value: 0=OK, 1=this is not a z80 asm file, 2,3=seek malfunction */
+int read_header(FILE *stream,unsigned short *address, unsigned *len)
 {
- unsigned char tmp[9];
+ char tmp[9];
  unsigned char c[2];
  unsigned a,b;
  int ret=0;
@@ -32,9 +32,11 @@ int read_header(FILE *stream,unsigned short *address, int *len)
  else if (fread(c,1,2,stream)!=2) ret=1;
  else
  { *address=(c[1]<<8)|c[0]; a=b+2; }
- fseek(stream,0,SEEK_END);
- b=ftell(stream);
- fseek(stream,a,SEEK_SET);
- *len=b-a;
+ if (fseek(stream,0,SEEK_END)) ret=2;
+ else if ((b=ftell(stream)) < a) ret=2;
+ else
+  *len=b-a;
+ if (fseek(stream,a,SEEK_SET))
+  ret=3;
  return ret; 
 }

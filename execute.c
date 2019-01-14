@@ -19,6 +19,7 @@
 
 int MODE=0;
 
+#define  MAX_HALF  (MAX_MEM/2)
 #define  VPRE4  "V%04x"
 #define  KPRE4  "K%04x"
 #define  DECI  "%u"
@@ -139,7 +140,7 @@ flag_str (char *str,_ushort arg)
 
 
 /* returns pointer to an 8-bit register number n (n=R_A,R_B,...) */
-static _uchar * const
+static _uchar *
 reg_ptr(_ushort n)
 {
  if (!n || n-1 >= N_8BIT_REGS)
@@ -173,7 +174,9 @@ reg_str (char *str,_ushort arg,_uchar type)
          i=sprintf(str,"(%s",reg_name[R_IY]);
          together:
 
-         if (MODE&2)
+         if (!(signed char)arg)
+            sprintf(str+i,")");
+         else if (MODE&2)
          {
             if ((signed char)arg < 0)
                sprintf(str+i,"-"), arg= -(signed char)arg;
@@ -192,7 +195,7 @@ static unsigned short ADDR;
 
 
 static int add_k_prefix(unsigned short adr)
-{  unsigned char *scr;
+{  char *scr;
    if ((MODE&16)!=16)  return 4;
    if (!(scr=malloc(6)))
       return  2;
@@ -205,7 +208,7 @@ static int add_k_prefix(unsigned short adr)
 
 
 static int add_prefix(char *txt, unsigned short adr)
-{  unsigned char *scr;
+{  char *scr;
    if ((MODE&16)!=16)  return 4;
    if (!is_in_table(txt,0,0,0))
       if (scr=malloc(6))
@@ -262,7 +265,7 @@ for (i=0;i<N_INSTRUCTIONS;i++)
 return  "NOP2";
 }
 
-_uchar *
+char *
 f_nop (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -270,7 +273,7 @@ f_nop (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_ld (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char arg1[16];
@@ -464,7 +467,6 @@ f_ld (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
  {
   set_flag(F_NH);
   set_flag(F_NN);
-  set_flag(F_PE);
   set_flag(A?F_NZ:F_Z);
   set_flag((A&128)?F_M:F_P);
  }
@@ -472,7 +474,7 @@ f_ld (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_call (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -522,7 +524,7 @@ f_call (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_ret (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[8];
@@ -550,7 +552,7 @@ f_ret (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_inc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -650,7 +652,7 @@ f_inc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_dec (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -750,7 +752,7 @@ f_dec (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-static _uchar *
+static char *
 f_rot_a (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
          char *str, void (*func)(void) )
 {
@@ -774,7 +776,7 @@ static void rra(void)
   A|=b<<7;
 }
 
-_uchar *
+char *
 f_rra (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_rot_a (a1,t1,a2,t2,dis(I_RRA),rra);
@@ -788,7 +790,7 @@ static void rla(void)
   A|=b;
 }
 
-_uchar *
+char *
 f_rla (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_rot_a (a1,t1,a2,t2,dis(I_RLA),rla);
@@ -802,7 +804,7 @@ static void rrca(void)
   A|=b<<7;
 }
 
-_uchar *
+char *
 f_rrca (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_rot_a (a1,t1,a2,t2,dis(I_RRCA),rrca);
@@ -816,14 +818,14 @@ static void rlca(void)
   A|=b>>7;
 }
 
-_uchar *
+char *
 f_rlca (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_rot_a (a1,t1,a2,t2,dis(I_RLCA),rlca);
 }
  
 
-static _uchar *
+static char *
 f_alu (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
        char *str, _uchar (*func)(_uchar) )
 {
@@ -963,13 +965,13 @@ static _uchar cp(_uchar a)
    return (_uchar)res;
 }
 
-_uchar *
+char *
 f_sub (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_alu (a1,t1,a2,t2,dis(I_SUB),sub);
 }
 
-_uchar *
+char *
 f_cp (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_alu (a1,t1,a2,t2,dis(I_CP),cp);
@@ -984,7 +986,7 @@ static _uchar and(_uchar a)
   return  A&=a;
 }
 
-_uchar *
+char *
 f_and (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_alu (a1,t1,a2,t2,dis(I_AND),and);
@@ -999,7 +1001,7 @@ static _uchar xor(_uchar a)
   return  A^=a;
 }
 
-_uchar *
+char *
 f_xor (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_alu (a1,t1,a2,t2,dis(I_XOR),xor);
@@ -1014,14 +1016,14 @@ static _uchar or(_uchar a)
   return  A|=a;
 }
 
-_uchar *
+char *
 f_or (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_alu (a1,t1,a2,t2,dis(I_OR),or);
 }
 
 
-static _uchar *
+static char *
 f_alu_16 (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
           char *str, _ushort (*func)(_ushort,_ushort) )
 {
@@ -1102,7 +1104,7 @@ f_alu_16 (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
 static _ushort add16(_ushort lv,_ushort rv)
 {
    int c,h;
-   c=((int)lv+rv)>65535;
+   c=((int)lv+rv)>=MAX_MEM;
    h=((int)(lv>>8&15)+(rv>>8&15))>15;
    set_flag(F_NN);
    set_flag(c?F_C:F_NC);
@@ -1110,7 +1112,7 @@ static _ushort add16(_ushort lv,_ushort rv)
    return  (_ushort)(lv+rv);
 }
 
-_uchar *
+char *
 f_add (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  if (a1 == R_A)  return f_alu (a1,t1,a2,t2,dis(I_ADD),add);
@@ -1124,9 +1126,9 @@ static _ushort sbc16(_ushort lv,_ushort rv)
    res=(short)lv-(short)rv-(int)is_flag(F_C);
    h=((int)(lv>>8&15)-(int)(rv>>8&15)-is_flag(F_C))<0;
    c=lv<rv+(unsigned)is_flag(F_C);
-   v=res>32767||res<-32768;
+   v=res>=MAX_HALF||res<-MAX_HALF;
 
-   set_flag(res&32768?F_M:F_P);
+   set_flag(res&MAX_HALF?F_M:F_P);
    set_flag(v?F_PE:F_PO);
    set_flag(c?F_C:F_NC);
    set_flag(h?F_H:F_NH);
@@ -1135,7 +1137,7 @@ static _ushort sbc16(_ushort lv,_ushort rv)
    return  (_ushort) res;
 }
 
-_uchar *
+char *
 f_sbc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  if (a1 == R_A)  return f_alu (a1,t1,a2,t2,dis(I_SBC),sbc);
@@ -1148,10 +1150,10 @@ static _ushort adc16(_ushort lv,_ushort rv)
 
    res=(short)lv+(short)rv+(int)is_flag(F_C);
    h=((int)(lv>>8&15)+(int)(rv>>8&15)+is_flag(F_C))>15;
-   c=lv>=65536-rv-(unsigned)is_flag(F_C);
-   v=res>32767||res<-32768;
+   c=lv>=MAX_MEM-rv-(unsigned)is_flag(F_C);
+   v=res>=MAX_HALF||res<-MAX_HALF;
    
-   set_flag(res&32768?F_M:F_P);
+   set_flag(res&MAX_HALF?F_M:F_P);
    set_flag(v?F_PE:F_PO);
    set_flag(c?F_C:F_NC);
    set_flag(h?F_H:F_NH);
@@ -1160,7 +1162,7 @@ static _ushort adc16(_ushort lv,_ushort rv)
    return (_ushort) res;
 }
 
-_uchar *
+char *
 f_adc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  if (a1 == R_A)  return f_alu (a1,t1,a2,t2,dis(I_ADC),adc);
@@ -1168,7 +1170,7 @@ f_adc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_djnz (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1205,7 +1207,7 @@ f_djnz (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_jp (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1285,7 +1287,7 @@ f_jp (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_jr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1331,7 +1333,7 @@ f_jr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_daa (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  _uchar a=0;
@@ -1366,7 +1368,7 @@ f_daa (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_cpl (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1383,7 +1385,7 @@ f_cpl (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_scf (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1400,7 +1402,7 @@ f_scf (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_ccf (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1416,7 +1418,7 @@ f_ccf (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_halt (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1430,7 +1432,7 @@ f_halt (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
  return 0;
 }
 
-_uchar *
+char *
 f_pop (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[8];
@@ -1481,7 +1483,7 @@ f_pop (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_push (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[8];
@@ -1533,7 +1535,7 @@ f_push (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_rst (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1557,7 +1559,7 @@ f_rst (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_out (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1588,7 +1590,7 @@ f_out (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_in (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1627,7 +1629,7 @@ f_in (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_exx (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  int a;
@@ -1648,7 +1650,7 @@ f_exx (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_ex (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[16];
@@ -1724,7 +1726,7 @@ f_ex (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_di (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1736,7 +1738,7 @@ f_di (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_ei (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;
@@ -1759,7 +1761,7 @@ static _uchar tbit(_uchar a1,_uchar a2)
 }
 
 
-static _uchar *
+static char *
 f_cb (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
       char *str, _uchar (*func)(_uchar,_uchar) )
 {
@@ -1830,7 +1832,7 @@ f_cb (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
 }
 
 
-_uchar *
+char *
 f_bit (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_BIT),tbit);
@@ -1843,7 +1845,7 @@ static _uchar set(_uchar a1,_uchar a2)
 }
 
 
-_uchar *
+char *
 f_set (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_SET),set);
@@ -1854,7 +1856,7 @@ static _uchar res(_uchar a1,_uchar a2)
    return a1 & ~(1<<a2);
 }
 
-_uchar *
+char *
 f_res (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_RES),res);
@@ -1868,7 +1870,7 @@ static _uchar rrc(_uchar a1,_uchar a2)
   return a1>>1|b<<7;
 }
 
-_uchar *
+char *
 f_rrc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_RRC),rrc);
@@ -1882,7 +1884,7 @@ static _uchar rlc(_uchar a1,_uchar a2)
   return a1<<1|b>>7;
 }
 
-_uchar *
+char *
 f_rlc (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_RLC),rlc);
@@ -1896,7 +1898,7 @@ static _uchar rr(_uchar a1,_uchar a2)
   return a1>>1|b<<7;
 }
 
-_uchar *
+char *
 f_rr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_RR),rr);
@@ -1910,7 +1912,7 @@ static _uchar rl(_uchar a1,_uchar a2)
   return a1<<1|b;
 }
 
-_uchar *
+char *
 f_rl (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_RL),rl);
@@ -1923,7 +1925,7 @@ static _uchar sll(_uchar a1,_uchar a2)
   return  a1<<1|1;
 }
 
-_uchar *
+char *
 f_sll (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_SLL),sll);
@@ -1936,7 +1938,7 @@ static _uchar sla(_uchar a1,_uchar a2)
   return  a1<<1;
 }
 
-_uchar *
+char *
 f_sla (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_SLA),sla);
@@ -1949,7 +1951,7 @@ static _uchar srl(_uchar a1,_uchar a2)
   return a1>>1;
 }
 
-_uchar *
+char *
 f_srl (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_SRL),srl);
@@ -1962,14 +1964,14 @@ static _uchar sra(_uchar a1,_uchar a2)
   return a1>>1|a1&128;
 }
 
-_uchar *
+char *
 f_sra (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return  f_cb (a1,t1,a2,t2,dis(I_SRA),sra);
 }
 
 
-_uchar *
+char *
 f_neg (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  unsigned char h;
@@ -1993,7 +1995,7 @@ f_neg (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_reti (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;a2=a2;t2=t2;t1=t1;
@@ -2011,7 +2013,7 @@ f_reti (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_retn (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;a2=a2;t2=t2;t1=t1;
@@ -2029,7 +2031,7 @@ f_retn (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_im (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  static char txt[8];
@@ -2046,7 +2048,7 @@ f_im (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_rrd (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  _uchar a, d;
@@ -2075,7 +2077,7 @@ f_rrd (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-_uchar *
+char *
 f_rld (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  _uchar a, d;
@@ -2104,7 +2106,7 @@ f_rld (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 }
 
 
-static _uchar *
+static char *
 ld_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
           char *str, int up, int rep)
 {
@@ -2134,34 +2136,34 @@ ld_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
  return 0;
 }
 
-_uchar *
+char *
 f_ldd (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return ld_block (a1,t1,a2,t2,dis(I_LDD),-1,0);
 }
 
-_uchar *
+char *
 f_lddr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return ld_block (a1,t1,a2,t2,dis(I_LDDR),-1,1);
 }
 
 
-_uchar *
+char *
 f_ldi (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return ld_block (a1,t1,a2,t2,dis(I_LDI),1,0);
 }
 
 
-_uchar *
+char *
 f_ldir (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return ld_block (a1,t1,a2,t2,dis(I_LDIR),1,1);
 }
 
 
-static _uchar *
+static char *
 cp_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
           char *str, int up, int rep)
 {
@@ -2199,32 +2201,32 @@ cp_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
  return 0;
 }
 
-_uchar *
+char *
 f_cpd (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return cp_block (a1,t1,a2,t2,dis(I_CPD),-1,0);
 }
 
-_uchar *
+char *
 f_cpdr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return cp_block (a1,t1,a2,t2,dis(I_CPDR),-1,1);
 }
 
-_uchar *
+char *
 f_cpi (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return cp_block (a1,t1,a2,t2,dis(I_CPI),1,0);
 }
 
-_uchar *
+char *
 f_cpir (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return cp_block (a1,t1,a2,t2,dis(I_CPIR),1,1);
 }
 
 
-static _uchar *
+static char *
 in_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
           char *str, int up, int rep)
 {
@@ -2253,32 +2255,32 @@ in_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
  return 0;
 }
 
-_uchar *
+char *
 f_ind (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return in_block (a1,t1,a2,t2,dis(I_IND),-1,0);
 }
 
-_uchar *
+char *
 f_indr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return in_block (a1,t1,a2,t2,dis(I_INDR),-1,1);
 }
 
-_uchar *
+char *
 f_ini (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return in_block (a1,t1,a2,t2,dis(I_INI),1,0);
 }
 
-_uchar *
+char *
 f_inir (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return in_block (a1,t1,a2,t2,dis(I_INIR),1,1);
 }
 
 
-static _uchar *
+static char *
 out_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
            char *str, int up, int rep)
 {
@@ -2307,32 +2309,32 @@ out_block (_ushort a1,_uchar t1,_ushort a2,_uchar t2,
  return 0;
 }
 
-_uchar *
+char *
 f_outd (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return out_block (a1,t1,a2,t2,dis(I_OUTD),-1,0);
 }
 
-_uchar *
+char *
 f_otdr (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return out_block (a1,t1,a2,t2,dis(I_OTDR),-1,1);
 }
 
-_uchar *
+char *
 f_outi (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return out_block (a1,t1,a2,t2,dis(I_OUTI),1,0);
 }
 
-_uchar *
+char *
 f_otir (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
    return out_block (a1,t1,a2,t2,dis(I_OTIR),1,1);
 }
 
 
-_uchar *
+char *
 f_nop2 (_ushort a1,_uchar t1,_ushort a2,_uchar t2)
 {
  a1=a1;t1=t1;a2=a2;t2=t2;

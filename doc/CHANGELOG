@@ -213,7 +213,7 @@ changes after version 2.3:
  * BUG ins asm.c: convert_arg():  arg->text isn't initialized to 0.  fixed!
  * BUG in regs.h: missing #include "z80-global" to define seznam_type  fixed!
  * BUG in execute.c: f_neg: PV_flag wrongly calculated  fixed!
- * BUG in execute.c: f_neg: H_flag setiing typo: F_N must be F_NH  fixed!
+ * BUG in execute.c: f_neg: H_flag setting typo: F_N must be F_NH  fixed!
  * BUG in execute.c: f_inc/f_dec: PV_flag wrongly calculated for 8-bit register
                            (last fix affected only 8-bit memory access)  fixed!
  * BUG in execute.c: add/adc/sub/sbc/cp/adc16/sbc16:  V_flag inverted mapped on
@@ -256,3 +256,24 @@ changes after version 2.3:
                      ports is not flushed before each new fread(..)   fixed!
  * BUG in memory.c:  in init_banks()  in strtoul(...) last paramter must be
                      16 because bank-id is always hexadecimal.  fixed!
+ * BUG in expression,c: parse_expr(): in case '%': skim_higher_priorities  fixed
+ * BUG in z80-asm.c: if parsing the arguments only the first option is
+                     recognized.  fixed
+ * in asm.c: in convert_arg() in case indirect "(IX...)" and "(IY...)"
+             no displacment value allowed and this is interpreted as value 0
+ * BUG in z80-mon.c: char blanks[23] must be declared as char blanks[24]. fixed
+ * BUG in execute.c: in f_ld() in case LD A,I or LD A,R parity flag wrongly set
+                     at the end of the function (correctly set before).  fixed
+ * wrong spelling insuffic(i)ent corrected
+ * all fread() function calls checked for correct number of total items returned
+ * all fseek() function calls checked for success of positioning
+ * in z80-mon.c:  optional startaddress for loaded binary implemented. This
+                  feature was already documentated yet not implemented.
+
+changes after version 2.4:
+ * BUG in asm.c: in convert_arg() in case indirect "(IX...)" and "(IY...)"
+                 forget to check for A_PODLE_I?_PLUS if convert returns != -1.
+ * BUG in asm.c: in convert_arg() forget to check whether this is a pure number
+                 or an expression starting with a number.  fixed!
+ * in execute.c: in reg_str () in cases A_PODLE_IX_PLUS/A_PODLE_IY_PLUS: if the
+                 displacement is 0 it is suppressed in indirect IX/IY access 

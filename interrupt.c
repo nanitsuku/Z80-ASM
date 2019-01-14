@@ -160,7 +160,7 @@ dump_cpu(char *filename)
 void interrupt_catcher(int signo)
 {
    if (signo == SIGTRAP)
-      dump_cpu(".CPU");
+      dump_cpu(_CPU);
    else if (signo == SIGUSR1)
       set_cpu_pin(reset,1);
    else if (signo == SIGUSR2)

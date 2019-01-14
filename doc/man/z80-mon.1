@@ -1,11 +1,11 @@
-.TH Z80-MON 1 "01 Oct 2006" "Z80-MON Version 2.4" "Z80 Monitor"
+.TH Z80-MON 1 "22 Apr 2018" "Z80-MON Version 2.4" "Z80 Monitor"
 
 .SH NAME
 z80-mon \- an interactive Z80 monitor with disassembler and emulator for UNIX,
 Linux and DO$
 
 .SH SYNOPSIS
-.B z80-mon [-h] [-E] [-R path] [filename[:startaddress] ...]
+.B z80-mon [-h] [-E] [-B filename] [-R path] [filename[:startaddress] ...]
 
 .SH DESCRIPTION
 .I z80-mon
@@ -62,19 +62,22 @@ Currently there is an external
 .I quartz
 ,needed for synchronisation of several components, a
 .I daisy-chain
-IO-curcuit, needed for interrupt handling of several components and an (experimental)
+IO-circuit, needed for interrupt handling of several components and an (experimental)
 .I Z80-ctc
 availible.
 
 .SH ARGUMENTS
 If a couple
-.I filename:address
+.I filename:startaddress
 is supplied, file
 .I filename
-is loaded to virtual Z80 memory from address
-.I address.
-If file contents
-exceeds address 65535, it will be clipped. Any number of files can be loaded.
+is loaded to virtual Z80 memory beginning at
+.I startaddress
+which must be given in hexadecimal format.
+A given address always overrules the obligatory startaddress in the binary file
+.I filename
+ .
+If file contents exceeds address 65535, it will be clipped. Any number of files can be loaded.
 Files are loaded sequentially, later file overwrites previous memory content.
 
 .SH OPTIONS
@@ -308,7 +311,7 @@ Interrupt mode 0 isn't working. If you find some bugs, please feel free to send 
 
 .SH AUTHORS
 Z80-MON was written by Brainsoft <brain@artax.karlin.mff.cuni.cz> and
-Achim Flammenkamp <achim@mathematik.uni-bielefeld.de>
+Achim Flammenkamp <achim@math.uni-bielefeld.de>
 
 .SH COPYING
 Copying of this software must be under terms of the GNU General Public

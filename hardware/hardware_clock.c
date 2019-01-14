@@ -12,7 +12,7 @@ int main(void)
    FILE *fp;
    if (!(fp=fopen(Z80_PORTS,"r+b")))
    {  fprintf(stderr,"cant open Z80 ports\n");
-      exit(1);
+      return 1;
    }
    time(&s);
    while (1)
@@ -21,10 +21,14 @@ int main(void)
       t -= s;
       for (i=0;i<4;i++, t>>=8)
          n[i]= t & 255;
-      fseek(fp,LOWEST_PORT_NO,SEEK_SET);
+      if (fseek(fp,LOWEST_PORT_NO,SEEK_SET))
+      {  fprintf(stderr,"cant position on lowest Z80 ports\n");
+         return 2;
+      }
       fwrite(n,1,4,fp);
       fflush(fp);
       usleep(500000);
    }
+   fclose(fp);
    return 0;
 }

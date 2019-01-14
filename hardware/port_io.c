@@ -16,10 +16,15 @@ if (1 != sscanf(argv[1],"%2x",&port))
 { fprintf(stderr,"invalid port-id %s (must be 2 digit hexadecimal)\n",argv[1]);
   fclose(fp); return 2; }
 
-fseek(fp,port,SEEK_SET);
+if (fseek(fp,port,SEEK_SET))
+{ fprintf(stderr,"hardware malfunction when reading port %2x\n",port);
+  fclose(fp); return 4; }
 if (argc == 2)
-{  fread(&v,1,1,fp);
-   printf("%02x\n",(unsigned)v);
+{  if (1 == fread(&v,1,1,fp))
+      printf("%02x\n",(unsigned)v);
+   else
+   { fprintf(stderr,"hardware malfunction when reading port %2x\n",port);
+     fclose(fp); return 5; }
 }
 else
 {

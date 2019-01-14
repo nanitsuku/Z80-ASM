@@ -1,9 +1,9 @@
-.TH Z80-CPU 3 "03 Jun 2005" "Z80-CPU Version 2.3" "Z80 CPU layout"
+.TH Z80-CPU 3 "18 Apr 2018" "Z80-CPU Version 2.4" "Z80 CPU layout"
 
 .SH NAME
 F, A, B, C, D, E, H, L, F_, A_, B_, C_, D_, E_, H_, L_,
 IXl, IXh, IYl, IYh, IX, IY, SP, PC, 
-I, R, IM
+I, R, IM,
 DATA, ADDRESS,
 IFF0, IFF1,IFF2, IFF3,
 cpu_rd, cpu_wr, cpu_iorq, cpu_mreq, cpu_m1, cpu_halts, cpu_wait, cpu_int, cpu_reset, cpu_busrq, cpu_busack
@@ -75,7 +75,7 @@ indicates the internal EI-flipflop.
 indicate the internal interrupt flipflops.
 .PP
 .I IFF3
-indicates the internal edge-triggred interrupt NMI-flipflop.
+indicates the internal edge-triggered interrupt NMI-flipflop.
 .PP
 .I DATA
 indicates the 8 CPU-DATA pins.

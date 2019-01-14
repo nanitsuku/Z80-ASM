@@ -12,8 +12,7 @@ DEFINES=-DFURTHER_HARDWARE -DPORT_BUFFER
 
 # set the appropriate install directories in your system
 
-MAN_DIR=/usr/share/man
-# This is where Ubuntu keeps man files, check with man --where
+MAN_DIR=/usr/local/man
 BIN_DIR=/usr/local/bin
 
 #--------- You shouldn't need to change anything under this line ---------------

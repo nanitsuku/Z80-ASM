@@ -79,9 +79,8 @@ unsigned char read_word(unsigned char port)
    if (!fp)
       return  0xff;
    fflush(fp);
-   if (fseek(fp,(long)port,SEEK_SET))
+   if (fseek(fp,(long)port,SEEK_SET)  ||  1 != fread(&byte,1,1,fp))
       return  0xff;  /* hardware malfunction */
-   fread(&byte,1,1,fp);
 #endif
    return  byte;
 }

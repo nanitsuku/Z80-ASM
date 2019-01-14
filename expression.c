@@ -329,7 +329,7 @@ parse_expr(char *txt, int* value, unsigned lineno)
                        b=1;  t=2;
                     }
                     else
-                    {  skim_higher_priorities("(jihgfedc|^&bc+-",'/');
+                    {  skim_higher_priorities("(jihgfedc|^&bc+-",txt[a]);
                        b=2;
                     }
                     break;

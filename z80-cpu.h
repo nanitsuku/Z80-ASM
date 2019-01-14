@@ -34,7 +34,7 @@ extern const bit cpu_pin[NO_CPU_CONTROL_PINS];
 
 extern const unsigned long ticks, cycles;
 extern bool cpu_is_in_disassemble, cpu_is_in_x_mode;
-extern void  set_cpu_pin(unsigned p, bit level);
+extern void set_cpu_pin(unsigned p, bit level);
 extern void wait_tics(unsigned duration);
 extern void set_tics(unsigned long t);
 extern void acknowledge_bus_request(void);

@@ -24,7 +24,7 @@
 
 static _ushort MEMP;
 
-static char *msg1="Z80 monitor V 2.3\n(c)1999-2004 Brainsoft\n";
+static char *msg1="Z80 monitor V 2.4.1\n(c)1999-2004 Brainsoft\n";
 static char *msg2="Z80 monitor (GPL)  " TIME_STAMP;
 static char _string[257];
 static char *string= _string+1;
@@ -40,7 +40,8 @@ static int follow;
 static int row;     /* row for printing next instruction */
 static _uchar tmp_memory[64];
 static unsigned long  last_ticks;
-static unsigned long  breakpt[8];
+#define  MAX_BRK_PTS  8
+static unsigned long  breakpt[MAX_BRK_PTS];
 
 struct info{ char *label; int value; unsigned lineno; };
 static struct info  *ele;
@@ -131,11 +132,11 @@ print(char *str)
  else if (row == -2)
  { int i;
    fprintf(stream,"%04x  ",current_pc);
-   for (i=0; i < (PC?PC:65536)-current_pc && i<4; i++)
+   for (i=0; i < (PC?PC:MAX_MEM)-current_pc && i<4; i++)
       fprintf(stream,"%02x ",(unsigned)memory_at((_ushort)(current_pc+i)));
    for (;i<4;i++)
       fprintf(stream,"   ");
-   for (i=0; i < (PC?PC:65536)-current_pc && i<4; i++)
+   for (i=0; i < (PC?PC:MAX_MEM)-current_pc && i<4; i++)
    {  unsigned char  m=memory_at((_ushort)(current_pc+i));
       fprintf(stream,"%c",(m>=32&&m<127?m:' '));
    }
@@ -387,8 +388,8 @@ print_stack(void)
  c_setcolor(color[DEFAULT]);
  for (r=12,a=SP+12;a>=SP-6;a-=2,r++)
  {
-  c=a&65535;
-  d=(a+1)&65535;
+  c=a&MAX_ADDR;
+  d=(a+1)&MAX_ADDR;
   b=memory_at(c)|(memory_at(d)<<8);
   sprintf(txt,"%04x  ",c);
   c_goto(24,r);
@@ -425,7 +426,7 @@ print_mem(void)
  c_print("MEMORY");
  for (r=0,c=memp;c<memp+80;c+=8,r++)
  {_ushort b;
-  a=c&65535;
+  a=c&MAX_ADDR;
   sprintf(txt,"%04x  ",a);
   c_goto(0,1+r);
   c_setcolor(color[ADDR]);
@@ -509,14 +510,14 @@ print_breaks(void)
 {
  int i,j;
  char txt[16];
- for (j=i=0;i<8;i++)
+ for (j=i=0;i<MAX_BRK_PTS;i++)
     if (breakpt[i]>>16)
     {
       sprintf(txt,"%4lu",breakpt[i]>>16);
       c_setcolor(color[HOT]);
       c_goto(10*j,22);
       c_print(txt);
-      sprintf(txt,"%04x",(unsigned)breakpt[i]&65535);
+      sprintf(txt,"%04x",(unsigned)breakpt[i]&MAX_ADDR);
       c_setcolor(color[ADDR]);
       c_print(txt);
       j++;
@@ -736,7 +737,7 @@ static void
 ask_general_16_register(char *prompt, _uchar *high, _uchar *low)
 { unsigned x;
   x=ask(prompt,*high<<8|*low);
-  if (x>65535)
+  if (x>MAX_ADDR)
   { c_bell();print_status(); }
   else
   { *high= x>>8;
@@ -750,7 +751,7 @@ static void
 ask_special_16_register(char *prompt, _ushort *reg16)
 { unsigned x;
   x=ask(prompt,*reg16);
-  if (x>65535)
+  if (x>MAX_ADDR)
   { c_bell();print_status(); }
   else
   { *reg16= x;
@@ -941,7 +942,8 @@ static int compare_addr(const struct info *left, const struct info *right)
 int
 main(int argc,char **argv)
 {
- unsigned char c, rom_path[256], bank_mapping_descr[128], emu=0;
+ char rom_path[256], bank_mapping_descr[128];
+ unsigned char c, emu=0;
  unsigned short old_pc;
  int b,a,s;
  unsigned short start;
@@ -972,22 +974,37 @@ main(int argc,char **argv)
     else if (*(argv[s]+b)=='h' || *(argv[s]+b)=='?')
     {
        printf("%s\n",msg1);
-       printf("Usage: z80-mon [-h] [-E] [-R path] [<filename> ...]\n");
+       printf("Usage: z80-mon [-h] [-E] [-B filename] [-R path] [<filename> ...]\n");
        return 0;
     }
  }
  clear_memory();
  MEMP=0;
 
- for (b=s;b<argc;b++)
+ for (;s<argc;s++)
  {
-  stream=fopen(argv[b],"rb");
-  if (!stream){fprintf(stderr,"Error: Can't read file \"%s\".\n",argv[b]);return(1);}
-  if (read_header(stream,&start,&x)){fprintf(stderr,"Error: \"%s\" is not a Z80 ASM file.\n",argv[b]);return(1);}
-  dma_write(start,x,stream);
-  MEMP=start;
-  fclose(stream);
-  stream=0;
+    for (b=0;*(argv[s]+b) && *(argv[s]+b)!=':';b++);
+    if (a=(*(argv[s]+b)==':'))
+       *(argv[s]+b)='\0';
+    stream=fopen(argv[s],"rb");
+    if (!stream)
+    {  fprintf(stderr,"Error: Can't read file \"%s\".\n",argv[s]);
+       return 1;
+    }
+    if (read_header(stream,&start,&x))
+    {  fprintf(stderr,"Error: \"%s\" is not a Z80 ASM file.\n",argv[s]);
+       return 1;
+    }
+    if (a)
+    {  if (1 != sscanf(argv[s]+b+1,"%hx",&start))
+       {  fprintf(stderr,"Error: \"%s\" is no hexadecimal address.\n",argv[s]+b+1);
+          return 2;
+       }
+    }
+    dma_write(start,x,stream);
+    MEMP=start;
+    fclose(stream);
+    stream=0;
  }
 
  c_init(BLACK); /** for DEBUG set it to WHITE **/
@@ -999,7 +1016,7 @@ main(int argc,char **argv)
  else if (*bank_mapping_descr)
     init_banks(rom_path,bank_mapping_descr);
  if (emu)
- {  init_cpu(".CPU");
+ {  init_cpu(_CPU);
     cpu_is_in_disassemble=0;
     speed= 1<<12;
     keyboard_disabled=1;
@@ -1028,7 +1045,7 @@ main(int argc,char **argv)
  {
   if (cpu_pin[halt] && !IFF1)
   { if (!cpu_is_in_disassemble && emu)
-    {  dump_cpu(".CPU");
+    {  dump_cpu(_CPU);
        break;
     }
     else
@@ -1040,14 +1057,14 @@ main(int argc,char **argv)
      usleep(20000);
   else
   {
-   for (a=0;a<8;a++)
-      if ((breakpt[a]&65535) == PC)
+   for (a=0;a<MAX_BRK_PTS;a++)
+      if ((breakpt[a]&MAX_ADDR) == PC)
          if (breakpt[a]>>16)
-         {  breakpt[a] -= 65536;
+         {  breakpt[a] -= MAX_MEM;
             print_breaks();
             break;
          }
-   if (a == 8 || breakpt[a]>>16)
+   if (a == MAX_BRK_PTS || breakpt[a]>>16)
    { if (stream)protocol();
      decode(0,1);  /* here we decode and execute the current opcode */
      if (cpu_is_in_disassemble || speed <= 1) print_panel();
@@ -1132,7 +1149,7 @@ main(int argc,char **argv)
 
    case 's': /* change SP */
    x=ask_x("SP=",SP);
-   if (x>65535){c_bell();print_status();break;}
+   if (x>MAX_ADDR){c_bell();print_status();break;}
    cpu_is_in_disassemble=1;
    SP=x;
    print_panel();
@@ -1233,7 +1250,7 @@ main(int argc,char **argv)
    case 'p': /* ask about address */
    case 'P':
    x=ask_x("PC=",PC);
-   if (x>65535){c_bell();print_status();break;}
+   if (x>MAX_ADDR){c_bell();print_status();break;}
    cpu_is_in_disassemble=1;
    PC=x;
    print_panel();
@@ -1276,7 +1293,7 @@ main(int argc,char **argv)
    case 'M':
    follow=0;
    x=ask_x("Enter memory address: ",MEMP);
-   if (x>65535){c_bell();break;}
+   if (x>MAX_ADDR){c_bell();break;}
    MEMP=x;
    print_panel();
    break;
@@ -1298,7 +1315,7 @@ main(int argc,char **argv)
    case 'S':   /* save */
    if (ask_str(save_name,"Save as: ",40)){c_bell();break;}
    x=ask("Length: ",0);
-   if (PC+x>65536)break;
+   if (PC+x>MAX_MEM)break;
    stream=fopen(save_name,"wb");
    if (!stream){stream=0;error_msg(save_name,"Can't write to file ");print_status();break;}
    write_header(stream,PC);
@@ -1313,7 +1330,7 @@ main(int argc,char **argv)
    sprintf(string,"0x%04x - ",PC);
 
    x=ask_x(string,0);
-   if (x>65536 || x < PC)
+   if (x>MAX_MEM || x < PC)
    {error_msg("","memory wrap_around");print_status();break;}
    stream=fopen(save_name,"a");
    if (!stream)
@@ -1358,7 +1375,7 @@ main(int argc,char **argv)
    }
    if (MODE&8)
    { 
-     char blanks[23];
+     char blanks[24];
      b=0;
      for (a=0;(unsigned)a<labels;a++)
         if (ele[a].label[0]) b++;
@@ -1400,16 +1417,16 @@ main(int argc,char **argv)
    break;
 
    case '%': /* ask about break point */
-   for (a=0;a<8;a++)
+   for (a=0;a<MAX_BRK_PTS;a++)
       if ((breakpt[a] & 0xffff) == MEMP)
          break;
-   if (a==8)
-   for (a=0;a<8;a++)
+   if (a==MAX_BRK_PTS)
+   for (a=0;a<MAX_BRK_PTS;a++)
       if ((breakpt[a]>>16 & 0xffff) == 0)
          break;
-   if (a==8)  {c_bell();break;}
+   if (a==MAX_BRK_PTS)  {c_bell();break;}
    x=ask_x("Enter breakpoint count: ",breakpt[a]>>16);
-   if (x>65535){c_bell();break;}
+   if (x>MAX_ADDR){c_bell();break;}
    breakpt[a] = MEMP | x<<16;
    print_breaks();
    break;

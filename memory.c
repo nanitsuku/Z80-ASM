@@ -36,17 +36,20 @@ static unsigned long  access_type;   /* holds two bits for each possible bank */
 
 
 #ifdef  NEEDED
-static void
+static int
 set_bank_port(unsigned char port_id, unsigned char value)
 {
 #ifdef  OLD_STYLE
    FILE *fp;
    if (!(fp=fopen(Z80_PORTS,"r+b")))
-      return;
-   fseek(fp,port_id,SEEK_SET);
-   fwrite(&value,1,1,fp);
+      return 1;
+   if (fseek(fp,port_id,SEEK_SET))
+      return 2;
+   if (1 != fwrite(&value,1,1,fp))
+      return 3;
    fclose(fp);
 #endif
+   return 0;
 }
 #endif
 
@@ -114,7 +117,8 @@ bank_switch(unsigned i, unsigned char id)
          if (!map[j].virtuel && map[i].offset == map[j].offset)
          {  if (i != j && map[j].port_no >= 0)
     /* different ports have equal offset!! */
-               set_bank_port((unsigned char)map[j].port_no,id);
+               if (set_bank_port((unsigned char)map[j].port_no,id))
+                  error(0,"hardware malfunction"," cant set bank port");
          }
 #endif
       mapped_from[index]= id;
@@ -302,11 +306,16 @@ for (k=1; fgets(buffer,800,fp) ; k++)
       }
       if (!(bank[id].back_up= (unsigned char *) malloc(1<<log2)))
       {  sprintf(err_line,ERROR_BANK,k);
-         error(0,err_line," insuffient memory");
+         error(0,err_line," insufficient memory");
          continue;
       }
       if (rom_fp)
-      {  fread(bank[id].back_up,1,1<<log2,rom_fp);
+      {  if (1U<<log2 != fread(bank[id].back_up,1,1U<<log2,rom_fp))
+         {  char  err_msg[64];
+            sprintf(err_msg," insufficient rom %63s", filename);
+            sprintf(err_line,ERROR_BANK,k);
+            error(0,err_line," rom malfunction");
+         }
          fclose(rom_fp);
       }
       delta=log2;
@@ -416,7 +425,7 @@ for (k=1; fgets(buffer,800,fp) ; k++)
       if (j < h)  continue;
       if (!(mmm= (struct port_map *)realloc(map,(no_maps+1)*sizeof(struct port_map))))
       {  sprintf(err_line,ERROR_MAP,k);
-         error(0,err_line," insufficent memory");
+         error(0,err_line," insufficient memory");
          continue;
       }
       map=mmm;
@@ -429,7 +438,7 @@ for (k=1; fgets(buffer,800,fp) ; k++)
       map[no_maps].count = h;
       if (!(map[no_maps].bankids= (unsigned char*)malloc(h*sizeof(_uchar))))
       {  sprintf(err_line,ERROR_MAP,k);
-         error(0,err_line," insufficent memory");
+         error(0,err_line," insufficient memory");
          continue;
       }
       for (j=0;j<h;j++)
@@ -442,11 +451,11 @@ for (k=1; fgets(buffer,800,fp) ; k++)
 fclose(fp);
 if (no_maps)
 {  if (!(address_map = (unsigned char **) malloc(sizeof(unsigned char*)<<(16-delta))))
-   {  error(0,"init_banks","bank mapping: insufficent memory");
+   {  error(0,"init_banks","bank mapping: insufficient memory");
       dealloc_banks_and_maps();
    }
    else if (!(mapped_from = (unsigned char *) malloc(sizeof(unsigned char)<<(16-delta))))
-   {  error(0,"init_banks","bank mapping: insufficent memory");
+   {  error(0,"init_banks","bank mapping: insufficient memory");
       dealloc_banks_and_maps();
    }
    reset_banks();
@@ -555,7 +564,7 @@ clear_memory(void)
 {
   int  i;
   if (!no_maps)
-     memset(memory,empty,65536);
+     memset(memory,empty,MAX_MEM);
   else
      for (i=0;i<16;i++)
         if (!(access_type>>(2*i)&2))
@@ -565,11 +574,13 @@ clear_memory(void)
 
 unsigned  dma_write(unsigned short offset, unsigned count, FILE *from)
 {
-   return  fread(memory+offset,1,count+offset<65536U?count:65536U-offset,from);
+   return  fread(memory+offset,1,count+offset<(unsigned)MAX_MEM?
+                                 count:(unsigned)MAX_MEM-offset,from);
 }
 
 
 unsigned  dma_read(unsigned short offset, unsigned count, FILE *to)
 {
-   return  fwrite(memory+offset,1,count+offset<65536U?count:65536U-offset,to);
+   return  fwrite(memory+offset,1,count+offset<(unsigned)MAX_MEM?
+                                  count:(unsigned)MAX_MEM-offset,to);
 }
