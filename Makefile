@@ -52,8 +52,11 @@ clean:
 
 install:
 	chmod a+rx $(ASM) $(MONI); cp -p $(ASM) $(MONI) $(BIN_DIR)
+	mkdir -p $(MAN_DIR)/man1
 	chmod a+r doc/man/z80-*.1; cp -p doc/man/z80-*.1 $(MAN_DIR)/man1
+	mkdir -p $(MAN_DIR)/man3
 	chmod a+r doc/man/z80-*.3; cp -p doc/man/z80-*.3 $(MAN_DIR)/man3
+	mkdir -p $(MAN_DIR)/man5
 	chmod a+r doc/man/z80-*.5; cp -p doc/man/z80-*.5 $(MAN_DIR)/man5
 
 z80-mon.o: z80-mon.c z80-cpu.h asm.h console.h console_token regs.h regs_token \
