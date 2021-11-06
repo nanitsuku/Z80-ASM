@@ -982,7 +982,7 @@ static _uchar and(_uchar a)
   __parity(A&a);
   set_flag(F_NC);
   set_flag(F_NN);
-  set_flag(F_NH);
+  set_flag(F_H);
   return  A&=a;
 }
 
