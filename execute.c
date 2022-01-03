@@ -1105,7 +1105,7 @@ static _ushort add16(_ushort lv,_ushort rv)
 {
    int c,h;
    c=((int)lv+rv)>=MAX_MEM;
-   h=((int)(lv>>8&15)+(rv>>8&15))>15;
+   h=((int)(lv&0x0FFF) + (rv&0x0FFF))>0x0FFF;
    set_flag(F_NN);
    set_flag(c?F_C:F_NC);
    set_flag(h?F_H:F_NH);
